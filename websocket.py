@@ -78,7 +78,7 @@ async def terminate_instances(request: Request):
             content={ "error": "The Request Instance not found in the connected list" }
         )
     print("[!] Terminating Client Connection", instance.ws, instance.product_slug, license_key)
-    await instance.ws.send_json({ "event": "terminate", "error": message or "Forcibly Terminated by the User via Dashboard" })
+    await instance.ws.send_json({ "event": "terminate", "message": message or "Forcibly Terminated by the User via Dashboard" })
     await instance.ws.close()
     return JSONResponse(
         status_code=200,
@@ -103,7 +103,7 @@ async def license_websocket(websocket: WebSocket, product_slug: str, product_ver
     last_client = CONN_CLIENTS.get(product_slug, {}).get(client_key)
     if last_client != None:
         print("[!] Closing Existing Client Connection", last_client.ws, last_client.product_slug, license_key)
-        await last_client.ws.send_json({ "event": "terminate", "error": "Another Product Session is using the same License Key" })
+        await last_client.ws.send_json({ "event": "terminate", "message": "Another Product Session is using the same License Key" })
         await last_client.ws.close()
     print("[+] Client Connected", websocket, product_slug, license_key)
     ws_client = ClientWSObject(websocket, product_obj, product_version, license_obj)
