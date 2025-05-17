@@ -1,7 +1,7 @@
 from json import JSONDecodeError
-import uvicorn, dotenv, os, httpx
 from collections import defaultdict
 from typing import Union, Dict, Tuple
+import uvicorn, dotenv, os, httpx, asyncio
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from utils.utils import LicenseObject, ClientWSObject, ProductObject, UserObject
@@ -96,6 +96,7 @@ async def license_websocket(websocket: WebSocket, product_slug: str, product_ver
                             )
     if valid_license.status_code != 200:
         await websocket.send_json({ "event": "terminate", "message": "Invalid License Key Provided" })
+        await asyncio.sleep(2)
         return await websocket.close()
     license_obj = LicenseObject(license_key)
     product_obj = ProductObject(valid_license.json())
@@ -119,7 +120,7 @@ async def license_websocket(websocket: WebSocket, product_slug: str, product_ver
         last_client = CONN_CLIENTS.get(product_slug, {}).get(client_key)
         if last_client != None and last_client.session_id == ws_client.session_id:
             del CONN_CLIENTS[product_slug][client_key]
-        print("[-] Client Disconnected", product_slug, websocket)
+        print("[-] Client Disconnected", websocket, product_slug, license_key)
 
 if __name__ == "__main__":
     uvicorn.run("websocket:app", host="0.0.0.0", port=PORT, reload=True)
