@@ -95,7 +95,7 @@ async def license_websocket(websocket: WebSocket, product_slug: str, product_ver
                                 json={ 'product_slug': product_slug, 'license_key': license_key, 'version': product_version }
                             )
     if valid_license.status_code != 200:
-        await websocket.send_json({ "error": "Invalid License Key Provided" })
+        await websocket.send_json({ "event": "terminate", "message": "Invalid License Key Provided" })
         return await websocket.close()
     license_obj = LicenseObject(license_key)
     product_obj = ProductObject(valid_license.json())
