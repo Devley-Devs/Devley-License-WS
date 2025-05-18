@@ -4,7 +4,7 @@ from typing import Union, Dict, Tuple
 import uvicorn, dotenv, os, httpx, asyncio
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
-from utils.utils import LicenseObject, ClientWSObject, ProductObject, UserObject
+from utils import LicenseObject, ClientWSObject, ProductObject, UserObject
 
 dotenv.load_dotenv()
 PORT: int = int(os.getenv('PORT', 5000))
