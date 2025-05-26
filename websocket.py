@@ -8,6 +8,7 @@ from utils import LicenseObject, ClientWSObject, ProductObject, UserObject
 
 dotenv.load_dotenv()
 PORT: int = int(os.getenv('PORT', 5000))
+DEVELOPMENT: bool = bool(os.getenv('DEVELOPMENT', False))
 
 app = FastAPI()
 
@@ -123,4 +124,4 @@ async def license_websocket(websocket: WebSocket, product_slug: str, product_ver
         print("[-] Client Disconnected", websocket, product_slug, license_key)
 
 if __name__ == "__main__":
-    uvicorn.run("websocket:app", host="0.0.0.0", port=PORT, reload=True)
+    uvicorn.run("websocket:app", host="0.0.0.0", port=PORT, reload=DEVELOPMENT)
