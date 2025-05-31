@@ -31,6 +31,10 @@ def check_authorization(request: Request) -> Tuple[bool, Union[UserObject, None]
         )
     return True, user_obj, None
 
+@app.head("/")
+async def license_welcome_head():
+    return PlainTextResponse(f"Devley License Websocket System V{VERSION}")
+
 @app.get("/")
 async def license_welcome():
     return PlainTextResponse(f"Devley License Websocket System V{VERSION}")
