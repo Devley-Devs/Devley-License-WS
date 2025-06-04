@@ -1,64 +1,56 @@
-import platform, time, psutil
 from datetime import timedelta
+import platform, time, psutil, os
 
-def bytes_to_human_readable(b):
-    units = ['B', 'KB', 'MB', 'GB', 'TB']
-    size = float(b)
-    for unit in units:
-        if size < 1024 or unit == units[-1]:
-            if unit == 'B':
-                return f"{int(size)} {unit}"
-            else:
-                return f"{size:.2f} {unit}"
-        size /= 1024
+BOOT_TIME: int = int(time.time())
 
-async def GetSystemUsage(ws_clients: int = 0):
-    cpu_usage = psutil.cpu_percent(interval=1)
-    cpu_cores = psutil.cpu_count(logical=False)
-    cpu_threads = psutil.cpu_count()
-    cpu_freq = psutil.cpu_freq()
+def bytes_to_human_readable(num_bytes):
+    for unit in ['B', 'KB', 'MB', 'GB']:
+        if num_bytes < 1024:
+            return f"{num_bytes:.2f} {unit}"
+        num_bytes /= 1024
+    return f"{num_bytes:.2f} TB"
+
+async def GetSystemUsage(limits: dict, ws_clients: int = 0):
+    process = psutil.Process(os.getpid())  # Get current Python process
     
-    virtual_mem = psutil.virtual_memory()
-    mem_used = bytes_to_human_readable(virtual_mem.used)
-    mem_total = bytes_to_human_readable(virtual_mem.total)
-    mem_percent = virtual_mem.percent
+    # CPU usage (per process, note: returns % of single core usage)
+    cpu_usage = process.cpu_percent(interval=1)  # Blocking for 1 sec to get accurate reading
     
-    disk = psutil.disk_usage('/')
-    disk_used = bytes_to_human_readable(disk.used)
-    disk_total = bytes_to_human_readable(disk.total)
-    disk_percent = disk.percent
+    # Memory usage
+    mem_info = process.memory_info()
+
+    mem_info = process.memory_full_info()
+
+    # Working Set (private memory) is usually what Task Manager shows
+    private_mem = getattr(mem_info, 'pss', None) or mem_info.uss  # Prefer pss if available
+    if not private_mem:
+        private_mem = mem_info.rss  # fallback
+
+    mem_used = bytes_to_human_readable(private_mem)  # Resident Set Size (actual RAM usage)
+    mem_percent = process.memory_percent()  # % of total system memory used by this process
     
+    # Network usage (still system-wide unless using net_io_counters(pernic=True) and filtering)
     net_io = psutil.net_io_counters()
     net_sent = bytes_to_human_readable(net_io.bytes_sent)
     net_recv = bytes_to_human_readable(net_io.bytes_recv)
     
-    boot_time = psutil.boot_time()
-    uptime = timedelta(seconds=int(time.time() - boot_time))
-    
-    process_count = len(psutil.pids())
+    # Uptime
+    uptime = timedelta(seconds=int(time.time() - BOOT_TIME))
     
     return {
-        "hostname": platform.node(),
-        "system": platform.system(),
-        "cpu_usage": cpu_usage,
-        "cpu_cores": cpu_cores,
-        "cpu_threads": cpu_threads,
-        "cpu_freq": cpu_freq.current if cpu_freq else 0,
+        "cpu_usage": round(cpu_usage / limits.get('cpu', 0.2), 2),
+        "cpu_cores": limits.get("cpu"),
         "mem_used": mem_used,
-        "mem_total": mem_total,
-        "mem_percent": mem_percent,
-        "disk_used": disk_used,
-        "disk_total": disk_total,
-        "disk_percent": disk_percent,
+        "mem_total": bytes_to_human_readable(limits.get("memory", 128) * (1024 ** 2)),
+        "mem_percent": round(mem_percent, 2),
         "net_sent": net_sent,
         "net_recv": net_recv,
         "uptime": str(uptime),
-        "process_count": process_count,
         "ws_clients": ws_clients
     }
 
-async def UsageHTMLParsed(ws_clients: int = 0):
-    data = await GetSystemUsage(ws_clients)
+async def UsageHTMLParsed(limits: dict, ws_clients: int = 0):
+    data = await GetSystemUsage(limits=limits, ws_clients=ws_clients)
     style = """
         * {
             margin: 0;
@@ -266,8 +258,7 @@ async def UsageHTMLParsed(ws_clients: int = 0):
             <div class="card">
                 <div class="card-header"><div class="card-icon">🖥️</div><div class="card-title">CPU Usage</div></div>
                 <div class="metric"><span class="metric-label">Usage</span><span class="metric-value">{data['cpu_usage']}%</span></div>
-                <div class="metric"><span class="metric-label">Cores / Threads</span><span class="metric-value">{data['cpu_cores']} / {data['cpu_threads']}</span></div>
-                <div class="metric"><span class="metric-label">Frequency</span><span class="metric-value">{int(data['cpu_freq'])} MHz</span></div>
+                <div class="metric"><span class="metric-label">Core</span><span class="metric-value">{data['cpu_cores']}</span></div>
                 <div class="progress-bar"><div class="progress-fill cpu-progress" style="width: {data['cpu_usage']}%"></div></div>
             </div>
 
@@ -284,14 +275,6 @@ async def UsageHTMLParsed(ws_clients: int = 0):
                 <div class="metric"><span class="metric-label">Total Clients</span><span class="metric-value">{data['ws_clients']}</span></div>
                 <div class="metric"><span class="metric-label">Sent</span><span class="metric-value">{data['net_sent']}</span></div>
                 <div class="metric"><span class="metric-label">Received</span><span class="metric-value">{data['net_recv']}</span></div>
-            </div>
-
-            <div class="card">
-                <div class="card-header"><div class="card-icon">💿</div><div class="card-title">Disk Usage</div></div>
-                <div class="metric"><span class="metric-label">Used</span><span class="metric-value">{data['disk_used']}</span></div>
-                <div class="metric"><span class="metric-label">Total</span><span class="metric-value">{data['disk_total']}</span></div>
-                <div class="metric"><span class="metric-label">Usage</span><span class="metric-value">{data['disk_percent']}%</span></div>
-                <div class="progress-bar"><div class="progress-fill disk-progress" style="width: {data['disk_percent']}%"></div></div>
             </div>
         </div>
     </div>

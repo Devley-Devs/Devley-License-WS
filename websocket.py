@@ -13,10 +13,12 @@ dotenv.load_dotenv()
 PORT: int = int(os.getenv('PORT', 5000))
 VERSION: float = float(os.getenv('VERSION', 1))
 DASHBOARD_URL: str = os.getenv('DASHBOARD_URL', '')
+CPU_LIMIT: float = float(os.getenv('CPU_LIMIT', 0.2))
+MEMORY_LIMIT: int = int(os.getenv('MEMORY_LIMIT', 128))
 DEVELOPMENT: bool = bool(os.getenv('DEVELOPMENT', False))
 USER_PASS: str = os.getenv('USER_PASS', secrets.token_hex())
 
-app = FastAPI()
+app = FastAPI(title="Devley License Server")
 HTTP_Sec = HTTPBasic()
 CONN_CLIENTS: Dict[str, Dict[str, ClientWSObject]] = defaultdict(dict)
 
@@ -56,7 +58,7 @@ async def license_welcome():
 @app.get("/usage", response_class=HTMLResponse)
 async def server_usage(credentials: HTTPBasicCredentials = Depends(http_authenticate)):
     ws_clients = sum([len(x) for x in CONN_CLIENTS.values()])
-    return HTMLResponse(content=await UsageHTMLParsed(ws_clients), status_code=200)
+    return HTMLResponse(content=await UsageHTMLParsed(ws_clients=ws_clients, limits={ "cpu": CPU_LIMIT, "memory": MEMORY_LIMIT }), status_code=200)
 
 @app.get("/api/getActiveInstances")
 async def active_instances(request: Request):
