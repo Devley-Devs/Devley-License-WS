@@ -1,4 +1,5 @@
 httpx
+psutil
 fastapi
 uvicorn
 websockets

@@ -1,20 +1,34 @@
 from json import JSONDecodeError
 from collections import defaultdict
 from typing import Union, Dict, Tuple
-import uvicorn, dotenv, os, httpx, asyncio
+from fastapi.responses import HTMLResponse
+import uvicorn, dotenv, os, httpx, asyncio, secrets
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
-from utils import LicenseObject, ClientWSObject, ProductObject, UserObject
+from utils import LicenseObject, ClientWSObject, ProductObject, UserObject, UsageHTMLParsed
 
 dotenv.load_dotenv()
 PORT: int = int(os.getenv('PORT', 5000))
-DEVELOPMENT: bool = bool(os.getenv('DEVELOPMENT', False))
-
-app = FastAPI()
-
-CONN_CLIENTS: Dict[str, Dict[str, ClientWSObject]] = defaultdict(dict)
 VERSION: float = float(os.getenv('VERSION', 1))
 DASHBOARD_URL: str = os.getenv('DASHBOARD_URL', '')
+DEVELOPMENT: bool = bool(os.getenv('DEVELOPMENT', False))
+USER_PASS: str = os.getenv('USER_PASS', secrets.token_hex())
+
+app = FastAPI()
+HTTP_Sec = HTTPBasic()
+CONN_CLIENTS: Dict[str, Dict[str, ClientWSObject]] = defaultdict(dict)
+
+def http_authenticate(credentials: HTTPBasicCredentials = Depends(HTTP_Sec)):
+    correct_username = secrets.compare_digest(credentials.username, USER_PASS)
+    correct_password = secrets.compare_digest(credentials.password, USER_PASS)
+    if not (correct_username and correct_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Basic"},
+        )
 
 def check_authorization(request: Request) -> Tuple[bool, Union[UserObject, None], Union[JSONResponse, None]]:
     authorization: Union[str, None] = request.headers.get('Authorization')
@@ -38,6 +52,11 @@ async def license_welcome_head():
 @app.get("/")
 async def license_welcome():
     return PlainTextResponse(f"Devley License Websocket System V{VERSION}")
+
+@app.get("/usage", response_class=HTMLResponse)
+async def server_usage(credentials: HTTPBasicCredentials = Depends(http_authenticate)):
+    ws_clients = sum([len(x) for x in CONN_CLIENTS.values()])
+    return HTMLResponse(content=await UsageHTMLParsed(ws_clients), status_code=200)
 
 @app.get("/api/getActiveInstances")
 async def active_instances(request: Request):
