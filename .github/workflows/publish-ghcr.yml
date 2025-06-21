@@ -1,4 +1,5 @@
 name: Docker Image CI of GHCR
+description: Docker Image CI of GHCR by Yuvaraja
 
 on:
   push:

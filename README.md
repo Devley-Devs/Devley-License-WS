@@ -15,9 +15,10 @@ A secure and lightweight license websocket server to maintain active clients in 
 
 ## Tech Stack
 
-- Python 🐍
-- websockets
-- Docker 🐳 (optional)
+- Bun
+- TypeScript
+- Websockets
+- Docker 🐳
 
 ## How to Run
 
@@ -29,12 +30,12 @@ A secure and lightweight license websocket server to maintain active clients in 
 2.  Install the dependencies:
 
     ```bash
-    pip install -r requirements.txt
+    bun install
     ```
 3.  Run the server:
 
     ```bash
-    python websocket.py
+    bun run start
     ```
 
 ## Author

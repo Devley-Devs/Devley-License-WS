@@ -1,6 +1,0 @@
-httpx
-psutil
-fastapi
-uvicorn
-websockets
-python-dotenv

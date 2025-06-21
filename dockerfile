@@ -1,10 +1,11 @@
-FROM python:3.13.3-slim-bookworm
+FROM oven/bun:latest
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY package.json .
+
+RUN bun install
 
 COPY . .
 
-CMD ["python", "websocket.py"]
+CMD ["bun", "run", "index.ts"]

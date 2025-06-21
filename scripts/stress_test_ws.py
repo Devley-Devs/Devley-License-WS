@@ -4,7 +4,7 @@ import time
 import multiprocessing
 
 # Configuration
-WEBSOCKET_URL = "ws://127.0.0.1:5000/ws/devactyl-app/2.4/6CV39233DE788761S_424568206691139584"
+WEBSOCKET_URL = "ws://127.0.0.1:5000/ws/devactyl-app/2.4/DEVACTYL_759050921413312532"
 CLIENTS_PER_PROCESS = 100     # Clients per process
 NUM_PROCESSES = 4            # Number of CPU cores/processes to use
 DURATION = 3600                # Time to keep connections open (in seconds)
