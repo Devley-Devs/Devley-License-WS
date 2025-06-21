@@ -1,5 +1,5 @@
+import time, psutil, os
 from datetime import timedelta
-import platform, time, psutil, os
 
 BOOT_TIME: int = int(time.time())
 
@@ -27,6 +27,7 @@ async def GetSystemUsage(limits: dict, ws_clients: int = 0):
         private_mem = mem_info.rss  # fallback
 
     mem_used = bytes_to_human_readable(private_mem)  # Resident Set Size (actual RAM usage)
+    mem_percent = process.memory_percent()  # % of total system memory used by this process
     
     # Network usage (still system-wide unless using net_io_counters(pernic=True) and filtering)
     net_io = psutil.net_io_counters()
@@ -41,7 +42,7 @@ async def GetSystemUsage(limits: dict, ws_clients: int = 0):
         "cpu_cores": limits.get("cpu"),
         "mem_used": mem_used,
         "mem_total": bytes_to_human_readable(limits.get("memory", 128) * (1024 ** 2)),
-        "mem_percent": round(((private_mem / (1024 ** 2)) / limits.get("memory", 512)) * 100, 2),
+        "mem_percent": round(mem_percent, 2),
         "net_sent": net_sent,
         "net_recv": net_recv,
         "uptime": str(uptime),
