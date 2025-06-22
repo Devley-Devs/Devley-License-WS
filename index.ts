@@ -1,13 +1,10 @@
-import dotenv from 'dotenv';
 import { websocket } from './src/websocket';
 import { ClientWSObject, type WebSocketData } from './src/types';
 import terminateInstances from './src/routes/terminateInstances';
 import getActiveInstances from './src/routes/getActiveInstances';
 
-dotenv.config();
-
-const PORT = parseInt(process.env.PORT || "3000");
-const VERSION = parseFloat(process.env.VERSION || "1.8");
+const PORT = parseInt(Bun.env.PORT || "3000");
+const VERSION = parseFloat(Bun.env.VERSION || "1.8");
 
 export const CONN_CLIENTS: Map<string, ClientWSObject> = new Map();
 
