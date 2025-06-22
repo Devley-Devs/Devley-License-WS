@@ -1,8 +1,8 @@
 import { CONN_CLIENTS } from '../index';
 import { LicenseObject, ProductObject, ClientWSObject } from './types';
 
-const DASHBOARD_URL = process.env.DASHBOARD_URL || '';
-const MAX_CONNECTIONS = parseInt(process.env.MAX_CONNECTIONS || "10000");
+const DASHBOARD_URL = Bun.env.DASHBOARD_URL || '';
+const MAX_CONNECTIONS = parseInt(Bun.env.MAX_CONNECTIONS || "10000");
 
 export const websocket = {
   async open(ws: WebSocket, product_slug: string, product_version: number, license_key: string) {

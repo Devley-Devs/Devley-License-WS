@@ -1,6 +1,6 @@
 import { UserObject } from './types.ts';
 
-const DASHBOARD_URL = process.env.DASHBOARD_URL ?? "";
+const DASHBOARD_URL = Bun.env.DASHBOARD_URL ?? "";
 
 export async function checkAuthorization({ request }: { request: Request }) {
   const authorization = request.headers.get('authorization') || "";
